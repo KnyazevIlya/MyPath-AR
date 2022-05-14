@@ -5,13 +5,9 @@
 //  Created by Illia Kniaziev on 12.05.2022.
 //
 
-import ARKit
-import CoreLocation
-import MapboxSceneKit
-import SceneKit
 import UIKit
 
-class ViewController: UIViewController {
+class MainViewController: UIViewController {
 
     @IBOutlet weak var arButton: UIButton! {
         didSet {
