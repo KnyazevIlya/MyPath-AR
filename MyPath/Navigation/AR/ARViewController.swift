@@ -101,42 +101,50 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         
         let scale = Float(0.333 * distance) / terrainNode.boundingSphere.radius
         terrainNode.transform = SCNMatrix4MakeScale(scale, scale, scale)
-        terrainNode.position = SCNVector3(raycastResult.worldTransform.columns.3.x, raycastResult.worldTransform.columns.3.y, raycastResult.worldTransform.columns.3.z)
+        terrainNode.position = SCNVector3(raycastResult.worldTransform.columns.3.x,
+                                          raycastResult.worldTransform.columns.3.y,
+                                          raycastResult.worldTransform.columns.3.z)
         terrainNode.geometry?.materials = defaultMaterials()
         arView!.scene.rootNode.addChildNode(terrainNode)
         terrain = terrainNode
-        terrainNode.fetchTerrainAndTexture(minWallHeight: 50.0, enableDynamicShadows: true, textureStyle: "mapbox/satellite-v9", heightProgress: nil, heightCompletion: { fetchError in
-            if let fetchError = fetchError {
-                NSLog("Terrain load failed: \(fetchError.localizedDescription)")
-            } else {
-                NSLog("Terrain load complete")
+        terrainNode.fetchTerrainAndTexture(
+            minWallHeight: 50.0,
+            enableDynamicShadows: true,
+            textureStyle: "mapbox/satellite-v9",
+            heightCompletion: { fetchError in
+                if let fetchError = fetchError {
+                    NSLog("Terrain load failed: \(fetchError.localizedDescription)")
+                } else {
+                    NSLog("Terrain load complete")
+                }
+            },
+            textureCompletion: { image, fetchError in
+                if let fetchError = fetchError {
+                    NSLog("Texture load failed: \(fetchError.localizedDescription)")
+                }
+                if image != nil {
+                    NSLog("Texture load complete")
+                    terrainNode.geometry?.materials[4].diffuse.contents = image
+                }
             }
-        }, textureProgress: nil) { image, fetchError in
-            if let fetchError = fetchError {
-                NSLog("Texture load failed: \(fetchError.localizedDescription)")
-            }
-            if image != nil {
-                NSLog("Texture load complete")
-                terrainNode.geometry?.materials[4].diffuse.contents = image
-            }
-        }
+        )
 
         arView!.isUserInteractionEnabled = true
     }
 
     private func defaultMaterials() -> [SCNMaterial] {
         let groundImage = SCNMaterial()
-        groundImage.diffuse.contents = UIColor.darkGray
+        groundImage.diffuse.contents = UIColor.white
         groundImage.name = "Ground texture"
 
         let sideMaterial = SCNMaterial()
-        sideMaterial.diffuse.contents = UIColor.darkGray
+        sideMaterial.diffuse.contents = UIColor.systemGray
         //TODO: Some kind of bug with the normals for sides where not having them double-sided has them not show up
         sideMaterial.isDoubleSided = true
         sideMaterial.name = "Side"
 
         let bottomMaterial = SCNMaterial()
-        bottomMaterial.diffuse.contents = UIColor.black
+        bottomMaterial.diffuse.contents = UIColor.systemGray
         bottomMaterial.name = "Bottom"
 
         return [sideMaterial, sideMaterial, sideMaterial, sideMaterial, groundImage, bottomMaterial]
@@ -194,12 +202,12 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
     // MARK: - ARSessionDelegate
 
-    @nonobjc func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         guard let frame = session.currentFrame else { return }
         updateSessionInfoLabel(for: frame, trackingState: frame.camera.trackingState)
     }
 
-    @nonobjc func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
         guard let frame = session.currentFrame else { return }
         updateSessionInfoLabel(for: frame, trackingState: frame.camera.trackingState)
     }
@@ -289,18 +297,49 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         let rotate = UIRotationGestureRecognizer(target: self, action: #selector(handleRotation(_:)))
         rotate.delegate = self
         arView?.addGestureRecognizer(rotate)
+        
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
         pinch.delegate = self
         arView?.addGestureRecognizer(pinch)
+        
         let drag = UIPanGestureRecognizer(target: self, action: #selector(handleDrag(_:)))
         drag.delegate = self
         drag.minimumNumberOfTouches = 1
         drag.maximumNumberOfTouches = 1
         arView?.addGestureRecognizer(drag)
+        
+        #if DEBUG
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        arView?.addGestureRecognizer(tap)
+        #endif
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return gestureRecognizer.numberOfTouches == otherGestureRecognizer.numberOfTouches
+    }
+    
+    @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+        let point = gesture.location(in: gesture.view!)
+        if let raycastResultPosition = arView?.smartRaycast(point, infinitePlane: true)?.worldTransform.columns.3,
+           let cameraPosition = session.currentFrame?.camera.transform.columns.3 {
+            let origin = SCNVector3(x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z)
+            let destination = SCNVector3(x: raycastResultPosition.x, y: raycastResultPosition.y, z: raycastResultPosition.z)
+            
+            let sphereNode = SCNGeometry.shpere(at: destination)
+            arView?.scene.rootNode.addChildNode(sphereNode)
+            
+            let scnHitTestResult = arView?.scene.rootNode.hitTestWithSegment(from: origin, to: destination)
+            if let scnPosition = scnHitTestResult?.first(where: { $0.node is TerrainNode })?.worldCoordinates {
+                print("🎯 \(scnPosition)")
+                let scnSphere = SCNGeometry.shpere(at: scnPosition, withRadius: 0.001, withColour: .systemPink)
+                arView?.scene.rootNode.addChildNode(scnSphere)
+            }
+            
+//            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+//                let lineNode = SCNGeometry.line(from: origin, to: destination)
+//                self.arView?.scene.rootNode.addChildNode(lineNode)
+//            }
+        }
     }
 
     private var lastDragResult: ARRaycastResult?
@@ -465,6 +504,36 @@ fileprivate extension float4x4 {
         columns.0.x = scale
         columns.1.y = scale
         columns.2.z = scale
+    }
+}
+
+fileprivate extension SCNGeometry {
+    static func line(from vector1: SCNVector3, to vector2: SCNVector3) -> SCNNode {
+        let indices: [Int32] = [0, 1]
+        let source = SCNGeometrySource(vertices: [vector1, vector2])
+        let element = SCNGeometryElement(indices: indices, primitiveType: .line)
+        
+        let lineMaterial = SCNMaterial()
+        lineMaterial.diffuse.contents = UIColor.systemMint
+        lineMaterial.lightingModel = .physicallyBased
+        lineMaterial.name = "Line texture"
+        
+        let geometry = SCNGeometry(sources: [source], elements: [element])
+        let lineNode = SCNNode(geometry: geometry)
+        lineNode.geometry?.materials = [lineMaterial]
+        lineNode.position = SCNVector3Zero
+        
+        return lineNode
+    }
+    
+    static func shpere(at point: SCNVector3, withRadius radius: CGFloat = 0.003, withColour colour: UIColor = .systemMint) -> SCNNode {
+        let geometry = SCNSphere(radius: radius)
+        geometry.firstMaterial?.diffuse.contents = colour
+        
+        let node = SCNNode(geometry: geometry)
+        node.position = point
+        
+        return node
     }
 }
 
