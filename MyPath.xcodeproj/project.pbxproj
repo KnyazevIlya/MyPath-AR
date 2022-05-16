@@ -11,6 +11,7 @@
 		067EB2FC282FE43100360AC5 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB2FB282FE43100360AC5 /* ViewController.swift */; };
 		067EB301282FE67500360AC5 /* FocusSquare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB300282FE67500360AC5 /* FocusSquare.swift */; };
 		067EB303282FE7AB00360AC5 /* SceneKit+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB302282FE7AB00360AC5 /* SceneKit+Extension.swift */; };
+		067EB305283249FE00360AC5 /* WeakWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB304283249FE00360AC5 /* WeakWrapper.swift */; };
 		06A3F4C8282D784F00F83FE0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A3F4C7282D784F00F83FE0 /* AppDelegate.swift */; };
 		06A3F4CA282D784F00F83FE0 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A3F4C9282D784F00F83FE0 /* SceneDelegate.swift */; };
 		06A3F4CC282D784F00F83FE0 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A3F4CB282D784F00F83FE0 /* MainViewController.swift */; };
@@ -26,6 +27,7 @@
 		067EB2FB282FE43100360AC5 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		067EB300282FE67500360AC5 /* FocusSquare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSquare.swift; sourceTree = "<group>"; };
 		067EB302282FE7AB00360AC5 /* SceneKit+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SceneKit+Extension.swift"; sourceTree = "<group>"; };
+		067EB304283249FE00360AC5 /* WeakWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeakWrapper.swift; sourceTree = "<group>"; };
 		06A3F4C4282D784F00F83FE0 /* MyPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		06A3F4C7282D784F00F83FE0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		06A3F4C9282D784F00F83FE0 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -148,6 +150,7 @@
 				067EB2FF282FE62000360AC5 /* ARComponents */,
 				06A3F4E4282D8A9500F83FE0 /* Extension */,
 				067EB2FB282FE43100360AC5 /* ViewController.swift */,
+				067EB304283249FE00360AC5 /* WeakWrapper.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -294,6 +297,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				067EB2FC282FE43100360AC5 /* ViewController.swift in Sources */,
+				067EB305283249FE00360AC5 /* WeakWrapper.swift in Sources */,
 				067EB303282FE7AB00360AC5 /* SceneKit+Extension.swift in Sources */,
 				067EB301282FE67500360AC5 /* FocusSquare.swift in Sources */,
 				06A3F4CC282D784F00F83FE0 /* MainViewController.swift in Sources */,

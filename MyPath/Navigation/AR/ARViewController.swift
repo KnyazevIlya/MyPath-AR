@@ -19,6 +19,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     @IBOutlet private weak var messageLabel: UILabel?
     
     private weak var terrain: SCNNode?
+    private var pathPoints: Array<Weak<SCNNode>> = []
     private var planes: [UUID: SCNNode] = [UUID: SCNNode]()
 
     override func viewDidLoad() {
@@ -308,30 +309,32 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         drag.maximumNumberOfTouches = 1
         arView?.addGestureRecognizer(drag)
         
-        #if DEBUG
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         arView?.addGestureRecognizer(tap)
-        #endif
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return gestureRecognizer.numberOfTouches == otherGestureRecognizer.numberOfTouches
     }
     
-    @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+    @objc fileprivate func handleTap(_ gesture: UITapGestureRecognizer) {
         let point = gesture.location(in: gesture.view!)
         if let raycastResultPosition = arView?.smartRaycast(point, infinitePlane: true)?.worldTransform.columns.3,
            let cameraPosition = session.currentFrame?.camera.transform.columns.3 {
             let origin = SCNVector3(x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z)
             let destination = SCNVector3(x: raycastResultPosition.x, y: raycastResultPosition.y, z: raycastResultPosition.z)
             
+            #if DEBUG
             let sphereNode = SCNGeometry.shpere(at: destination)
+            pathPoints.append(Weak(sphereNode))
             arView?.scene.rootNode.addChildNode(sphereNode)
+            #endif
             
             let scnHitTestResult = arView?.scene.rootNode.hitTestWithSegment(from: origin, to: destination)
             if let scnPosition = scnHitTestResult?.first(where: { $0.node is TerrainNode })?.worldCoordinates {
                 print("🎯 \(scnPosition)")
                 let scnSphere = SCNGeometry.shpere(at: scnPosition, withRadius: 0.001, withColour: .systemPink)
+                pathPoints.append(Weak(scnSphere))
                 arView?.scene.rootNode.addChildNode(scnSphere)
             }
             
@@ -355,6 +358,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
                                                     result.worldTransform.columns.3.y - lastDragResult.worldTransform.columns.3.y,
                                                     result.worldTransform.columns.3.z - lastDragResult.worldTransform.columns.3.z)
                 terrain.position += vector
+                pathPoints.forEach { $0.value?.position += vector }
             }
             lastDragResult = result
         }
@@ -368,28 +372,45 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         guard let terrain = terrain else {
             return
         }
-        var normalized = (terrain.eulerAngles.y - Float(gesture.rotation)).truncatingRemainder(dividingBy: 2 * .pi)
-        normalized = (normalized + 2 * .pi).truncatingRemainder(dividingBy: 2 * .pi)
-        if normalized > .pi {
-            normalized -= 2 * .pi
+        
+        let gestureRotation = Float(gesture.rotation)
+        
+        let pivotTerrainCenter = terrain.position
+
+        terrain.eulerAngles.y = getNormalizedRotation(eulerAngleY: terrain.eulerAngles.y, rotation: gestureRotation)
+        
+        pathPoints.forEach { weakNode in
+            guard let node = weakNode.value else { return }
+                        
+            let nodeX = node.position.x
+            let nodeY = node.position.z
+            let pivotX = pivotTerrainCenter.x
+            let pivotY = pivotTerrainCenter.z
+            let theta = gestureRotation
+
+            node.position.x = cos(theta) * (nodeX - pivotX) - sin(theta) * (nodeY - pivotY) + pivotX
+            node.position.z = sin(theta) * (nodeX - pivotX) + cos(theta) * (nodeY - pivotY) + pivotY
         }
-        terrain.eulerAngles.y = normalized
+        
         gesture.rotation = 0
     }
 
     private var startScale: Float?
     @objc fileprivate func handlePinch(_ gesture: UIPinchGestureRecognizer) {
-        guard let terrain = terrain else {
-            return
-        }
+        guard let terrain = terrain else { return }
+        
         if gesture.state == .began {
             startScale = terrain.scale.x
         }
-        guard let startScale = startScale else {
-            return
-        }
+        
+        guard let startScale = startScale else { return }
+        
         let newScale: Float = startScale * Float(gesture.scale)
-        terrain.scale = SCNVector3(newScale, newScale, newScale)
+        let newScaleVec = SCNVector3(newScale, newScale, newScale)
+        terrain.scale = newScaleVec
+        
+        pathPoints.forEach { $0.value?.scale = newScaleVec }
+        
         if gesture.state == .ended {
             self.startScale = nil
         }
@@ -427,6 +448,16 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
     private var session: ARSession {
         return arView!.session
+    }
+    
+    private func getNormalizedRotation(eulerAngleY: Float, rotation: Float) -> Float {
+        var normalized = (eulerAngleY - rotation).truncatingRemainder(dividingBy: 2 * .pi)
+        normalized = (normalized + 2 * .pi).truncatingRemainder(dividingBy: 2 * .pi)
+        if normalized > .pi {
+            normalized -= 2 * .pi
+        }
+        
+        return normalized
     }
     
 }
