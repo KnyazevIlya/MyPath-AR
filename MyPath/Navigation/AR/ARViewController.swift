@@ -113,7 +113,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         terrainNode.fetchTerrainAndTexture(
             minWallHeight: 50.0,
             enableDynamicShadows: true,
-            textureStyle: "mapbox/satellite-v9",
+            textureStyle: MapboxMapStyler.MapStyle.sattelite.rawValue,
             heightCompletion: { fetchError in
                 if let fetchError = fetchError {
                     print("Terrain load failed: \(fetchError.localizedDescription)")
@@ -142,7 +142,6 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
         let sideMaterial = SCNMaterial()
         sideMaterial.diffuse.contents = UIColor.systemGray
-        //TODO: Some kind of bug with the normals for sides where not having them double-sided has them not show up
         sideMaterial.isDoubleSided = true
         sideMaterial.name = "Side"
 
@@ -252,7 +251,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         guard let arView = arView else { return }
 
         if !arView.isUserInteractionEnabled, let result = arView.smartRaycast(screenCenter, infinitePlane: true), let planeAnchor = result.anchor as? ARPlaneAnchor {
-            let position: SCNVector3 = SCNVector3(result.worldTransform.columns.3.x, result.worldTransform.columns.3.y, result.worldTransform.columns.3.z)
+            let position: SCNVector3 = SCNVector3(result.worldTransform.columns.3)
             focusSquare?.update(for: position, planeAnchor: planeAnchor, camera: arView.session.currentFrame?.camera)
             focusSquare?.unhide()
         } else {
@@ -292,7 +291,6 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         self.messageLabel?.text = message
         self.messageView?.isHidden = message.isEmpty
     }
-
 
     // MARK: - UIGestureRecognizer
 
@@ -335,13 +333,13 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         let point = gesture.location(in: gesture.view!)
         if let raycastResultPosition = arView?.smartRaycast(point, infinitePlane: true)?.worldTransform.columns.3,
            let cameraPosition = session.currentFrame?.camera.transform.columns.3 {
-            let origin = SCNVector3(x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z)
-            let destination = SCNVector3(x: raycastResultPosition.x, y: raycastResultPosition.y, z: raycastResultPosition.z)
+            let origin = SCNVector3(cameraPosition)
+            let destination = SCNVector3(raycastResultPosition)
             
             #if DEBUG
-//            let sphereNode = SCNGeometry.shpere(at: destination)
-//            pathPoints.append(Weak(sphereNode))
-//            arView?.scene.rootNode.addChildNode(sphereNode)
+            let sphereNode = SCNGeometry.shpere(at: destination)
+            pathPoints.append(Weak(sphereNode))
+            arView?.scene.rootNode.addChildNode(sphereNode)
             #endif
             
             let scnHitTestResult = arView?.scene.rootNode.hitTestWithSegment(from: origin, to: destination)
@@ -351,11 +349,6 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
                 pathPoints.append(Weak(scnSphere))
                 arView?.scene.rootNode.addChildNode(scnSphere)
             }
-            
-//            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
-//                let lineNode = SCNGeometry.line(from: origin, to: destination)
-//                self.arView?.scene.rootNode.addChildNode(lineNode)
-//            }
         }
     }
 
@@ -368,9 +361,8 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         let point = gesture.location(in: gesture.view!)
         if let result = arView?.smartRaycast(point, infinitePlane: true) {
             if let lastDragResult = lastDragResult {
-                let vector: SCNVector3 = SCNVector3(result.worldTransform.columns.3.x - lastDragResult.worldTransform.columns.3.x,
-                                                    result.worldTransform.columns.3.y - lastDragResult.worldTransform.columns.3.y,
-                                                    result.worldTransform.columns.3.z - lastDragResult.worldTransform.columns.3.z)
+                let diff = result.worldTransform.columns.3 - lastDragResult.worldTransform.columns.3
+                let vector: SCNVector3 = SCNVector3(diff)
                 terrain.position += vector
                 pathPoints.forEach { $0.value?.position += vector }
             }
@@ -386,6 +378,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     private var initialPathScale: SCNVector3?
     private var initialTerrainPosition: SCNVector3?
     private var initialPathPointsPositions: [SCNVector3] = []
+    private var isUserZooming = false
 
     @objc fileprivate func handleRotation(_ gesture: UIRotationGestureRecognizer) {
         guard let terrain = terrain else {
@@ -396,30 +389,21 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         
         let pivotTerrainCenter = terrain.position
 
-        terrain.eulerAngles.y = getNormalizedRotation(eulerAngleY: terrain.eulerAngles.y, rotation: gestureRotation)
+        terrain.eulerAngles.y = GeometryManager.getNormalizedRotation(eulerAngleY: terrain.eulerAngles.y, rotation: gestureRotation)
         
-        zip(pathPoints, 0..<initialPathPointsPositions.count).forEach { weakNode, initialPositionIndex in
+        zip(pathPoints, 0..<pathPoints.count).forEach { weakNode, initialPositionIndex in
             guard let node = weakNode.value else { return }
-            var initialNodePosition = initialPathPointsPositions[initialPositionIndex]
-                        
-            var nodeX = node.position.x
-            var nodeY = node.position.z
+
+            node.position = GeometryManager.rotateOnHorizontalPlain(point: node.position,
+                                                                    around: pivotTerrainCenter,
+                                                                    by: gestureRotation)
             
-            let pivotX = pivotTerrainCenter.x
-            let pivotY = pivotTerrainCenter.z
-            let theta = gestureRotation
-            let cosValue = cos(theta)
-            let sinValue = sin(theta)
-            
-            node.position.x = cosValue * (nodeX - pivotX) - sinValue * (nodeY - pivotY) + pivotX
-            node.position.z = sinValue * (nodeX - pivotX) + cosValue * (nodeY - pivotY) + pivotY
-            
-            nodeX = initialNodePosition.x
-            nodeY = initialNodePosition.z
-            
-            initialNodePosition.x = cosValue * (nodeX - pivotX) - sinValue * (nodeY - pivotY) + pivotX
-            initialNodePosition.z = sinValue * (nodeX - pivotX) + cosValue * (nodeY - pivotY) + pivotY
-            initialPathPointsPositions[initialPositionIndex] = initialNodePosition
+            if isUserZooming {
+                let initialNodePosition = initialPathPointsPositions[initialPositionIndex]
+                initialPathPointsPositions[initialPositionIndex] = GeometryManager.rotateOnHorizontalPlain(point: initialNodePosition,
+                                                                                                           around: pivotTerrainCenter,
+                                                                                                           by: gestureRotation)
+            }
         }
         
         gesture.rotation = 0
@@ -435,10 +419,11 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             pathPoints = pathPoints.compactMap { $0 }
             initialPathScale = pathPoints.first?.value?.scale
             initialPathPointsPositions = pathPoints.compactMap { $0.value?.position }
+            
+            isUserZooming = true
         }
         
-        guard let startScale = startScale,
-        pathPoints.count == initialPathPointsPositions.count else { return }
+        guard let startScale = startScale else { return }
         let gestureScale = Float(gesture.scale)
         
         let newScale: Float = startScale * gestureScale
@@ -453,19 +438,13 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
                 node.scale = newPathScale
 
                 let ratio = gestureScale / (1 - gestureScale)
-                node.position = getPointDevidingLineSegment(withRatio: ratio, from: initialTerrainPosition, to: position)
-//
-//                if let cameraPosition = session.currentFrame?.camera.transform.columns.3 {
-//                    let origin = SCNVector3(x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z)
-//                    let l = SCNGeometry.line(from: origin, to: node.position)
-//                    arView?.scene.rootNode.addChildNode(l)
-//                }
-//
+                node.position = GeometryManager.getPointDevidingLineSegment(withRatio: ratio, from: initialTerrainPosition, to: position)
             }
         }
         
         if gesture.state == .ended {
             self.startScale = nil
+            self.isUserZooming = false
         }
     }
 
@@ -502,130 +481,4 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     private var session: ARSession {
         return arView!.session
     }
-    
-    private func getNormalizedRotation(eulerAngleY: Float, rotation: Float) -> Float {
-        var normalized = (eulerAngleY - rotation).truncatingRemainder(dividingBy: 2 * .pi)
-        normalized = (normalized + 2 * .pi).truncatingRemainder(dividingBy: 2 * .pi)
-        if normalized > .pi {
-            normalized -= 2 * .pi
-        }
-        
-        return normalized
-    }
-    
-    private func getPointDevidingLineSegment(withRatio ratio: Float, from start: SCNVector3, to end: SCNVector3) -> SCNVector3 {
-        return (start + end * ratio) / (1 + ratio)
-    }
-    
-    private func getEndPoint(withRatio ratio: Float, startPoint start: SCNVector3, devider: SCNVector3) -> SCNVector3 {
-        return (devider * (1 + ratio) - start) / ratio
-    }
-    
 }
-
-fileprivate extension ARSCNView {
-    func smartRaycast(_ point: CGPoint,
-                      infinitePlane: Bool = false,
-                      objectPosition: SIMD3<Float>? = nil,
-                      allowedAlignments: [ARPlaneAnchor.Alignment] = [.horizontal]) -> ARRaycastResult? {
-        guard let query = raycastQuery(from: point, allowing: .existingPlaneGeometry, alignment: .horizontal) else {
-            return nil
-        }
-
-        let results = session.raycast(query)
-        
-        if let nearestResult = results.first,
-           let planeAnchor = nearestResult.anchor as? ARPlaneAnchor,
-           allowedAlignments.contains(planeAnchor.alignment) {
-            return nearestResult
-        }
-        
-        if infinitePlane {
-            guard let query = raycastQuery(from: point, allowing: .existingPlaneInfinite, alignment: .horizontal) else {
-                return nil
-            }
-            
-            let infiniteResults = session.raycast(query)
-            
-            for infiniteResult in infiniteResults {
-                if let planeAnchor = infiniteResult.anchor as? ARPlaneAnchor,
-                   allowedAlignments.contains(planeAnchor.alignment) {
-                    if let objectY = objectPosition?.y {
-                        let planeY = infiniteResult.worldTransform.translation.y
-                        if objectY > planeY - 0.05 && objectY < planeY + 0.05 {
-                            return infiniteResult
-                        }
-                    } else {
-                        return infiniteResult
-                    }
-                }
-            }
-        }
-        
-        return results.first
-    }
-}
-
-fileprivate extension float4x4 {
-    /**
-     Treats matrix as a (right-hand column-major convention) transform matrix
-     and factors out the translation component of the transform.
-     */
-    var translation: SIMD3<Float> {
-        get {
-            let translation = columns.3
-            return SIMD3<Float>(translation.x, translation.y, translation.z)
-        }
-        set(newValue) {
-            columns.3 = SIMD4<Float>(newValue.x, newValue.y, newValue.z, columns.3.w)
-        }
-    }
-
-    /**
-     Factors out the orientation component of the transform.
-     */
-    var orientation: simd_quatf {
-        return simd_quaternion(self)
-    }
-
-    /**
-     Creates a transform matrix with a uniform scale factor in all directions.
-     */
-    init(uniformScale scale: Float) {
-        self = matrix_identity_float4x4
-        columns.0.x = scale
-        columns.1.y = scale
-        columns.2.z = scale
-    }
-}
-
-fileprivate extension SCNGeometry {
-    static func line(from vector1: SCNVector3, to vector2: SCNVector3) -> SCNNode {
-        let indices: [Int32] = [0, 1]
-        let source = SCNGeometrySource(vertices: [vector1, vector2])
-        let element = SCNGeometryElement(indices: indices, primitiveType: .line)
-        
-        let lineMaterial = SCNMaterial()
-        lineMaterial.diffuse.contents = UIColor.systemMint
-        lineMaterial.lightingModel = .physicallyBased
-        lineMaterial.name = "Line texture"
-        
-        let geometry = SCNGeometry(sources: [source], elements: [element])
-        let lineNode = SCNNode(geometry: geometry)
-        lineNode.geometry?.materials = [lineMaterial]
-        lineNode.position = SCNVector3Zero
-        
-        return lineNode
-    }
-    
-    static func shpere(at point: SCNVector3, withRadius radius: CGFloat = 0.003, withColour colour: UIColor = .systemMint) -> SCNNode {
-        let geometry = SCNSphere(radius: radius)
-        geometry.firstMaterial?.diffuse.contents = colour
-        
-        let node = SCNNode(geometry: geometry)
-        node.position = point
-        
-        return node
-    }
-}
-
