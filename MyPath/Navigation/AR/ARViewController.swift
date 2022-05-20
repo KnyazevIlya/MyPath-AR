@@ -18,7 +18,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     @IBOutlet private weak var messageView: UIVisualEffectView?
     @IBOutlet private weak var messageLabel: UILabel?
     
-    var isSimultaniousRotationAndZoomingDisallowed = false
+    var isSimultaneousRotationAndZoomingDisallowed = false
     
     private weak var terrain: SCNNode?
     private var pathPoints: [Weak<SCNNode>] = []
@@ -400,23 +400,26 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         
         zip(pathPoints, 0..<initialPathPointsPositions.count).forEach { weakNode, initialPositionIndex in
             guard let node = weakNode.value else { return }
+            var initialNodePosition = initialPathPointsPositions[initialPositionIndex]
                         
-            let nodeX = node.position.x
-            let nodeY = node.position.z
+            var nodeX = node.position.x
+            var nodeY = node.position.z
+            
             let pivotX = pivotTerrainCenter.x
             let pivotY = pivotTerrainCenter.z
             let theta = gestureRotation
-
-            let xChange = cos(theta) * (nodeX - pivotX) - sin(theta) * (nodeY - pivotY) + pivotX
-            let zChange = sin(theta) * (nodeX - pivotX) + cos(theta) * (nodeY - pivotY) + pivotY
+            let cosValue = cos(theta)
+            let sinValue = sin(theta)
             
-            node.position.x = xChange
-            node.position.z = zChange
+            node.position.x = cosValue * (nodeX - pivotX) - sinValue * (nodeY - pivotY) + pivotX
+            node.position.z = sinValue * (nodeX - pivotX) + cosValue * (nodeY - pivotY) + pivotY
             
-            var tmp = initialPathPointsPositions[initialPositionIndex]
-            tmp.x = xChange
-            tmp.z = zChange
-            initialPathPointsPositions[initialPositionIndex] = tmp
+            nodeX = initialNodePosition.x
+            nodeY = initialNodePosition.z
+            
+            initialNodePosition.x = cosValue * (nodeX - pivotX) - sinValue * (nodeY - pivotY) + pivotX
+            initialNodePosition.z = sinValue * (nodeX - pivotX) + cosValue * (nodeY - pivotY) + pivotY
+            initialPathPointsPositions[initialPositionIndex] = initialNodePosition
         }
         
         gesture.rotation = 0
@@ -449,8 +452,6 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
                 node.scale = newPathScale
 
-                print("scale: \(gestureScale)")
-                print("from: \(node.position)")
                 let ratio = gestureScale / (1 - gestureScale)
                 node.position = getPointDevidingLineSegment(withRatio: ratio, from: initialTerrainPosition, to: position)
 //
@@ -460,7 +461,6 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 //                    arView?.scene.rootNode.addChildNode(l)
 //                }
 //
-                print("to: \(node.position)\n")
             }
         }
         
