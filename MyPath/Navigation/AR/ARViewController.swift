@@ -317,7 +317,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         
-        if isSimultaniousRotationAndZoomingDisallowed {
+        if isSimultaneousRotationAndZoomingDisallowed {
             let simultaniousPinchDragFlag1 = gestureRecognizer is UIRotationGestureRecognizer ||
                                              gestureRecognizer is UIPinchGestureRecognizer
             let simultaniousPinchDragFlag2 = otherGestureRecognizer is UIRotationGestureRecognizer ||
