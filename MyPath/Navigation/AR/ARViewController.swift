@@ -18,9 +18,11 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     @IBOutlet private weak var messageView: UIVisualEffectView?
     @IBOutlet private weak var messageLabel: UILabel?
     
+    var isSimultaniousRotationAndZoomingDisallowed = false
+    
     private weak var terrain: SCNNode?
-    private var pathPoints: Array<Weak<SCNNode>> = []
-    private var planes: [UUID: SCNNode] = [UUID: SCNNode]()
+    private var pathPoints: [Weak<SCNNode>] = []
+    private var planes: [UUID: SCNNode] = [:]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,9 +37,6 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
         arView!.isUserInteractionEnabled = false
         setupGestures()
-        
-        print("🌨", getPointDevidingLineSegment(withRatio: 1/3, from: SCNVector3(x: 5, y: 3, z: 0), to: SCNVector3(x: -3, y: -1, z: 0)))
-        
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -117,17 +116,17 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             textureStyle: "mapbox/satellite-v9",
             heightCompletion: { fetchError in
                 if let fetchError = fetchError {
-                    NSLog("Terrain load failed: \(fetchError.localizedDescription)")
+                    print("Terrain load failed: \(fetchError.localizedDescription)")
                 } else {
-                    NSLog("Terrain load complete")
+                    print("Terrain load complete")
                 }
             },
             textureCompletion: { image, fetchError in
                 if let fetchError = fetchError {
-                    NSLog("Texture load failed: \(fetchError.localizedDescription)")
+                    print("Texture load failed: \(fetchError.localizedDescription)")
                 }
                 if image != nil {
-                    NSLog("Texture load complete")
+                    print("Texture load complete")
                     terrainNode.geometry?.materials[4].diffuse.contents = image
                 }
             }
@@ -317,6 +316,18 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        
+        if isSimultaniousRotationAndZoomingDisallowed {
+            let simultaniousPinchDragFlag1 = gestureRecognizer is UIRotationGestureRecognizer ||
+                                             gestureRecognizer is UIPinchGestureRecognizer
+            let simultaniousPinchDragFlag2 = otherGestureRecognizer is UIRotationGestureRecognizer ||
+                                             otherGestureRecognizer is UIPinchGestureRecognizer
+            
+            if simultaniousPinchDragFlag1 && simultaniousPinchDragFlag2 {
+                return false
+            }
+        }
+        
         return gestureRecognizer.numberOfTouches == otherGestureRecognizer.numberOfTouches
     }
     
