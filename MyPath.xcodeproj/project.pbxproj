@@ -12,6 +12,12 @@
 		067EB301282FE67500360AC5 /* FocusSquare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB300282FE67500360AC5 /* FocusSquare.swift */; };
 		067EB303282FE7AB00360AC5 /* SceneKit+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB302282FE7AB00360AC5 /* SceneKit+Extension.swift */; };
 		067EB305283249FE00360AC5 /* WeakWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB304283249FE00360AC5 /* WeakWrapper.swift */; };
+		069C17BA283831210099FE4F /* simd+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17B9283831200099FE4F /* simd+Extension.swift */; };
+		069C17BC283831670099FE4F /* SCNGeometry+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17BB283831670099FE4F /* SCNGeometry+Extension.swift */; };
+		069C17BE283831A40099FE4F /* SmartRaycast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17BD283831A40099FE4F /* SmartRaycast.swift */; };
+		069C17C0283834FE0099FE4F /* GeometryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17BF283834FE0099FE4F /* GeometryManager.swift */; };
+		069C17C2283836520099FE4F /* SCNVector3+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17C1283836520099FE4F /* SCNVector3+Extension.swift */; };
+		069C17C428383DB70099FE4F /* MapboxMapStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17C328383DB70099FE4F /* MapboxMapStyler.swift */; };
 		06A3F4C8282D784F00F83FE0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A3F4C7282D784F00F83FE0 /* AppDelegate.swift */; };
 		06A3F4CA282D784F00F83FE0 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A3F4C9282D784F00F83FE0 /* SceneDelegate.swift */; };
 		06A3F4CC282D784F00F83FE0 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A3F4CB282D784F00F83FE0 /* MainViewController.swift */; };
@@ -28,6 +34,12 @@
 		067EB300282FE67500360AC5 /* FocusSquare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSquare.swift; sourceTree = "<group>"; };
 		067EB302282FE7AB00360AC5 /* SceneKit+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SceneKit+Extension.swift"; sourceTree = "<group>"; };
 		067EB304283249FE00360AC5 /* WeakWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeakWrapper.swift; sourceTree = "<group>"; };
+		069C17B9283831200099FE4F /* simd+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "simd+Extension.swift"; sourceTree = "<group>"; };
+		069C17BB283831670099FE4F /* SCNGeometry+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SCNGeometry+Extension.swift"; sourceTree = "<group>"; };
+		069C17BD283831A40099FE4F /* SmartRaycast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartRaycast.swift; sourceTree = "<group>"; };
+		069C17BF283834FE0099FE4F /* GeometryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryManager.swift; sourceTree = "<group>"; };
+		069C17C1283836520099FE4F /* SCNVector3+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SCNVector3+Extension.swift"; sourceTree = "<group>"; };
+		069C17C328383DB70099FE4F /* MapboxMapStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapboxMapStyler.swift; sourceTree = "<group>"; };
 		06A3F4C4282D784F00F83FE0 /* MyPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		06A3F4C7282D784F00F83FE0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		06A3F4C9282D784F00F83FE0 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -66,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				067EB300282FE67500360AC5 /* FocusSquare.swift */,
+				069C17BF283834FE0099FE4F /* GeometryManager.swift */,
 			);
 			path = ARComponents;
 			sourceTree = "<group>";
@@ -151,6 +164,7 @@
 				06A3F4E4282D8A9500F83FE0 /* Extension */,
 				067EB2FB282FE43100360AC5 /* ViewController.swift */,
 				067EB304283249FE00360AC5 /* WeakWrapper.swift */,
+				069C17C328383DB70099FE4F /* MapboxMapStyler.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -160,6 +174,10 @@
 			children = (
 				06A3F4E5282D8AA800F83FE0 /* UIImage+Extension.swift */,
 				067EB302282FE7AB00360AC5 /* SceneKit+Extension.swift */,
+				069C17B9283831200099FE4F /* simd+Extension.swift */,
+				069C17BB283831670099FE4F /* SCNGeometry+Extension.swift */,
+				069C17BD283831A40099FE4F /* SmartRaycast.swift */,
+				069C17C1283836520099FE4F /* SCNVector3+Extension.swift */,
 			);
 			path = Extension;
 			sourceTree = "<group>";
@@ -298,13 +316,19 @@
 			files = (
 				067EB2FC282FE43100360AC5 /* ViewController.swift in Sources */,
 				067EB305283249FE00360AC5 /* WeakWrapper.swift in Sources */,
+				069C17BA283831210099FE4F /* simd+Extension.swift in Sources */,
+				069C17BE283831A40099FE4F /* SmartRaycast.swift in Sources */,
 				067EB303282FE7AB00360AC5 /* SceneKit+Extension.swift in Sources */,
 				067EB301282FE67500360AC5 /* FocusSquare.swift in Sources */,
 				06A3F4CC282D784F00F83FE0 /* MainViewController.swift in Sources */,
+				069C17BC283831670099FE4F /* SCNGeometry+Extension.swift in Sources */,
 				06A3F4C8282D784F00F83FE0 /* AppDelegate.swift in Sources */,
+				069C17C2283836520099FE4F /* SCNVector3+Extension.swift in Sources */,
 				06A3F4CA282D784F00F83FE0 /* SceneDelegate.swift in Sources */,
 				06A3F4E6282D8AA800F83FE0 /* UIImage+Extension.swift in Sources */,
+				069C17C428383DB70099FE4F /* MapboxMapStyler.swift in Sources */,
 				067EB2FA282FE2DD00360AC5 /* ARViewController.swift in Sources */,
+				069C17C0283834FE0099FE4F /* GeometryManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
