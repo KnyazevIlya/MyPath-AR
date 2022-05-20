@@ -378,6 +378,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     private var initialPathScale: SCNVector3?
     private var initialTerrainPosition: SCNVector3?
     private var initialPathPointsPositions: [SCNVector3] = []
+    private var isUserZooming = false
 
     @objc fileprivate func handleRotation(_ gesture: UIRotationGestureRecognizer) {
         guard let terrain = terrain else {
@@ -390,17 +391,19 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
         terrain.eulerAngles.y = GeometryManager.getNormalizedRotation(eulerAngleY: terrain.eulerAngles.y, rotation: gestureRotation)
         
-        zip(pathPoints, 0..<initialPathPointsPositions.count).forEach { weakNode, initialPositionIndex in
+        zip(pathPoints, 0..<pathPoints.count).forEach { weakNode, initialPositionIndex in
             guard let node = weakNode.value else { return }
-            let initialNodePosition = initialPathPointsPositions[initialPositionIndex]
 
             node.position = GeometryManager.rotateOnHorizontalPlain(point: node.position,
-                                                    around: pivotTerrainCenter,
-                                                    by: gestureRotation)
+                                                                    around: pivotTerrainCenter,
+                                                                    by: gestureRotation)
             
-            initialPathPointsPositions[initialPositionIndex] = GeometryManager.rotateOnHorizontalPlain(point: initialNodePosition,
-                                                                                       around: pivotTerrainCenter,
-                                                                                       by: gestureRotation)
+            if isUserZooming {
+                let initialNodePosition = initialPathPointsPositions[initialPositionIndex]
+                initialPathPointsPositions[initialPositionIndex] = GeometryManager.rotateOnHorizontalPlain(point: initialNodePosition,
+                                                                                                           around: pivotTerrainCenter,
+                                                                                                           by: gestureRotation)
+            }
         }
         
         gesture.rotation = 0
@@ -416,10 +419,11 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             pathPoints = pathPoints.compactMap { $0 }
             initialPathScale = pathPoints.first?.value?.scale
             initialPathPointsPositions = pathPoints.compactMap { $0.value?.position }
+            
+            isUserZooming = true
         }
         
-        guard let startScale = startScale,
-        pathPoints.count == initialPathPointsPositions.count else { return }
+        guard let startScale = startScale else { return }
         let gestureScale = Float(gesture.scale)
         
         let newScale: Float = startScale * gestureScale
@@ -440,6 +444,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         
         if gesture.state == .ended {
             self.startScale = nil
+            self.isUserZooming = false
         }
     }
 
