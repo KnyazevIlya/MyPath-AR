@@ -35,6 +35,9 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
         arView!.isUserInteractionEnabled = false
         setupGestures()
+        
+        print("🌨", getPointDevidingLineSegment(withRatio: 1/3, from: SCNVector3(x: 5, y: 3, z: 0), to: SCNVector3(x: -3, y: -1, z: 0)))
+        
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -325,9 +328,9 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             let destination = SCNVector3(x: raycastResultPosition.x, y: raycastResultPosition.y, z: raycastResultPosition.z)
             
             #if DEBUG
-            let sphereNode = SCNGeometry.shpere(at: destination)
-            pathPoints.append(Weak(sphereNode))
-            arView?.scene.rootNode.addChildNode(sphereNode)
+//            let sphereNode = SCNGeometry.shpere(at: destination)
+//            pathPoints.append(Weak(sphereNode))
+//            arView?.scene.rootNode.addChildNode(sphereNode)
             #endif
             
             let scnHitTestResult = arView?.scene.rootNode.hitTestWithSegment(from: origin, to: destination)
@@ -367,6 +370,11 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             self.lastDragResult = nil
         }
     }
+    
+    private var startScale: Float?
+    private var initialPathScale: SCNVector3?
+    private var initialTerrainPosition: SCNVector3?
+    private var initialPathPointsPositions: [SCNVector3] = []
 
     @objc fileprivate func handleRotation(_ gesture: UIRotationGestureRecognizer) {
         guard let terrain = terrain else {
@@ -379,7 +387,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
 
         terrain.eulerAngles.y = getNormalizedRotation(eulerAngleY: terrain.eulerAngles.y, rotation: gestureRotation)
         
-        pathPoints.forEach { weakNode in
+        zip(pathPoints, 0..<initialPathPointsPositions.count).forEach { weakNode, initialPositionIndex in
             guard let node = weakNode.value else { return }
                         
             let nodeX = node.position.x
@@ -388,28 +396,62 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             let pivotY = pivotTerrainCenter.z
             let theta = gestureRotation
 
-            node.position.x = cos(theta) * (nodeX - pivotX) - sin(theta) * (nodeY - pivotY) + pivotX
-            node.position.z = sin(theta) * (nodeX - pivotX) + cos(theta) * (nodeY - pivotY) + pivotY
+            let xChange = cos(theta) * (nodeX - pivotX) - sin(theta) * (nodeY - pivotY) + pivotX
+            let zChange = sin(theta) * (nodeX - pivotX) + cos(theta) * (nodeY - pivotY) + pivotY
+            
+            node.position.x = xChange
+            node.position.z = zChange
+            
+            var tmp = initialPathPointsPositions[initialPositionIndex]
+            tmp.x = xChange
+            tmp.z = zChange
+            initialPathPointsPositions[initialPositionIndex] = tmp
         }
         
         gesture.rotation = 0
     }
 
-    private var startScale: Float?
     @objc fileprivate func handlePinch(_ gesture: UIPinchGestureRecognizer) {
         guard let terrain = terrain else { return }
         
         if gesture.state == .began {
             startScale = terrain.scale.x
+            initialTerrainPosition = terrain.position
+            
+            pathPoints = pathPoints.compactMap { $0 }
+            initialPathScale = pathPoints.first?.value?.scale
+            initialPathPointsPositions = pathPoints.compactMap { $0.value?.position }
         }
         
-        guard let startScale = startScale else { return }
+        guard let startScale = startScale,
+        pathPoints.count == initialPathPointsPositions.count else { return }
+        let gestureScale = Float(gesture.scale)
         
-        let newScale: Float = startScale * Float(gesture.scale)
+        let newScale: Float = startScale * gestureScale
         let newScaleVec = SCNVector3(newScale, newScale, newScale)
         terrain.scale = newScaleVec
         
-        pathPoints.forEach { $0.value?.scale = newScaleVec }
+        if let initialPathScale = initialPathScale, let initialTerrainPosition = initialTerrainPosition {
+            let newPathScale = initialPathScale * gestureScale
+            zip(pathPoints, initialPathPointsPositions).forEach { weakNode, position in
+                guard let node = weakNode.value else { return }
+
+                node.scale = newPathScale
+
+                print("scale: \(gestureScale)")
+                print("from: \(node.position)")
+                let ratio = gestureScale / (1 - gestureScale)
+                node.position = getPointDevidingLineSegment(withRatio: ratio, from: initialTerrainPosition, to: position)
+//
+//                if let cameraPosition = session.currentFrame?.camera.transform.columns.3 {
+//                    let origin = SCNVector3(x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z)
+//                    let l = SCNGeometry.line(from: origin, to: node.position)
+//                    arView?.scene.rootNode.addChildNode(l)
+//                }
+//
+                print("to: \(node.position)\n")
+            }
+        }
         
         if gesture.state == .ended {
             self.startScale = nil
@@ -458,6 +500,14 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
         }
         
         return normalized
+    }
+    
+    private func getPointDevidingLineSegment(withRatio ratio: Float, from start: SCNVector3, to end: SCNVector3) -> SCNVector3 {
+        return (start + end * ratio) / (1 + ratio)
+    }
+    
+    private func getEndPoint(withRatio ratio: Float, startPoint start: SCNVector3, devider: SCNVector3) -> SCNVector3 {
+        return (devider * (1 + ratio) - start) / ratio
     }
     
 }
