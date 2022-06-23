@@ -7,10 +7,4 @@
 
 import UIKit
 
-class ViewController: UIViewController {
-    
-    deinit {
-        print("🟢 \(#function) \(self)")
-    }
-    
-}
+class ViewController: UIViewController {}

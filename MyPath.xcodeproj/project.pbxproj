@@ -12,6 +12,7 @@
 		067EB301282FE67500360AC5 /* FocusSquare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB300282FE67500360AC5 /* FocusSquare.swift */; };
 		067EB303282FE7AB00360AC5 /* SceneKit+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB302282FE7AB00360AC5 /* SceneKit+Extension.swift */; };
 		067EB305283249FE00360AC5 /* WeakWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 067EB304283249FE00360AC5 /* WeakWrapper.swift */; };
+		068B6B8E28647E1E00337435 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 068B6B8D28647E1E00337435 /* OnboardingView.swift */; };
 		069C17BA283831210099FE4F /* simd+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17B9283831200099FE4F /* simd+Extension.swift */; };
 		069C17BC283831670099FE4F /* SCNGeometry+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17BB283831670099FE4F /* SCNGeometry+Extension.swift */; };
 		069C17BE283831A40099FE4F /* SmartRaycast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C17BD283831A40099FE4F /* SmartRaycast.swift */; };
@@ -34,6 +35,7 @@
 		067EB300282FE67500360AC5 /* FocusSquare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSquare.swift; sourceTree = "<group>"; };
 		067EB302282FE7AB00360AC5 /* SceneKit+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SceneKit+Extension.swift"; sourceTree = "<group>"; };
 		067EB304283249FE00360AC5 /* WeakWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeakWrapper.swift; sourceTree = "<group>"; };
+		068B6B8D28647E1E00337435 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		069C17B9283831200099FE4F /* simd+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "simd+Extension.swift"; sourceTree = "<group>"; };
 		069C17BB283831670099FE4F /* SCNGeometry+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SCNGeometry+Extension.swift"; sourceTree = "<group>"; };
 		069C17BD283831A40099FE4F /* SmartRaycast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartRaycast.swift; sourceTree = "<group>"; };
@@ -83,6 +85,14 @@
 			path = ARComponents;
 			sourceTree = "<group>";
 		};
+		068B6B8C28647E0900337435 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				068B6B8D28647E1E00337435 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		06A3F4BB282D784F00F83FE0 = {
 			isa = PBXGroup;
 			children = (
@@ -116,6 +126,7 @@
 		06A3F4DB282D7EAA00F83FE0 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
+				068B6B8C28647E0900337435 /* Onboarding */,
 				067EB2F8282FE2CC00360AC5 /* AR */,
 				06A3F4DC282D7EB300F83FE0 /* Main */,
 			);
@@ -327,6 +338,7 @@
 				06A3F4CA282D784F00F83FE0 /* SceneDelegate.swift in Sources */,
 				06A3F4E6282D8AA800F83FE0 /* UIImage+Extension.swift in Sources */,
 				069C17C428383DB70099FE4F /* MapboxMapStyler.swift in Sources */,
+				068B6B8E28647E1E00337435 /* OnboardingView.swift in Sources */,
 				067EB2FA282FE2DD00360AC5 /* ARViewController.swift in Sources */,
 				069C17C0283834FE0099FE4F /* GeometryManager.swift in Sources */,
 			);
@@ -484,7 +496,6 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "AR Viewing";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -515,7 +526,6 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "AR Viewing";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

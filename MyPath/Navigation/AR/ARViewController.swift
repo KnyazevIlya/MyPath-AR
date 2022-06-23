@@ -132,6 +132,8 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             }
         )
 
+        //position ----(boundingSphere.radius)---- some corner coordinates -> profit :)
+        
         arView!.isUserInteractionEnabled = true
     }
 
