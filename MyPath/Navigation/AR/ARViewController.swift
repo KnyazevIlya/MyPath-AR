@@ -24,7 +24,7 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     var northEastCorner: CLLocation?
     var northWestCorner: CLLocation?
     
-    private weak var terrain: SCNNode?
+    private weak var terrain: TerrainNode?
     private var pathPoints: [Weak<SCNNode>] = []
     private var planes: [UUID: SCNNode] = [:]
 
@@ -373,6 +373,8 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
                 let scnSphere = SCNGeometry.shpere(at: scnWorldPosition, withRadius: 0.001, withColour: .systemPink)
                 pathPoints.append(Weak(scnSphere))
                 arView?.scene.rootNode.addChildNode(scnSphere)
+                
+                buildPolyline(from: northWestCorner!.coordinate, to: pysicalCoordinates!)
             }
         }
     }
@@ -401,6 +403,23 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             latitude: northWestCorner.coordinate.latitude - latOffset,
             longitude: northWestCorner.coordinate.longitude + lonOffset
         )
+    }
+    
+    private func buildPolyline(from start: CLLocationCoordinate2D, to end: CLLocationCoordinate2D, pivotCount: Int = 20) {
+        var locations: [CLLocation] = [CLLocation(latitude: start.latitude, longitude: start.longitude)]
+        let stepLat = (end.latitude - start.latitude) / Double(pivotCount)
+        let stepLon = (end.longitude - start.longitude) / Double(pivotCount)
+        for _ in 0..<pivotCount {
+            let previous = locations.last!
+            let next = CLLocation(
+                latitude: previous.coordinate.latitude + stepLat,
+                longitude: previous.coordinate.longitude + stepLon
+            )
+            
+            locations.append(next)
+        }
+        
+        terrain?.addPolyline(coordinates: locations, radius: 5, color: .systemIndigo)
     }
 
     private var lastDragResult: ARRaycastResult?
