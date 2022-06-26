@@ -20,6 +20,10 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     
     var isSimultaneousRotationAndZoomingDisallowed = false
     
+    var southWestCorner: CLLocation?
+    var northEastCorner: CLLocation?
+    var northWestCorner: CLLocation?
+    
     private weak var terrain: SCNNode?
     private var pathPoints: [Weak<SCNNode>] = []
     private var planes: [UUID: SCNNode] = [:]
@@ -86,9 +90,17 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     }
 
     private func insert(on plane: SCNNode, from raycastResult: ARRaycastResult) {
+        
+//        southWestCorner = CLLocation(latitude: 48.599523, longitude: 23.915913)
+//        northEastCorner = CLLocation(latitude: 48.626899, longitude: 23.955292)
+        southWestCorner = CLLocation(latitude: 51.85351, longitude: 33.49884)
+        northEastCorner = CLLocation(latitude: 51.86205, longitude: 33.51074)
+        northWestCorner = CLLocation(latitude: northEastCorner!.coordinate.latitude, longitude: southWestCorner!.coordinate.longitude)
+        
         //Set up initial terrain and materials
-        let terrainNode = TerrainNode(minLat: 48.599523, maxLat: 48.626899,
-                                      minLon: 23.915913, maxLon: 23.955292)
+//        let terrainNode = TerrainNode(minLat: 48.599523, maxLat: 48.626899,
+//                                      minLon: 23.915913, maxLon: 23.955292)
+        let terrainNode = TerrainNode(southWestCorner: southWestCorner!, northEastCorner: northEastCorner!)
 
         let camera = arView?.session.currentFrame?.camera
         let cameraPositon = camera?.transform.columns.3
@@ -316,7 +328,6 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        
         if isSimultaneousRotationAndZoomingDisallowed {
             let simultaniousPinchDragFlag1 = gestureRecognizer is UIRotationGestureRecognizer ||
                                              gestureRecognizer is UIPinchGestureRecognizer
@@ -345,13 +356,51 @@ class ARViewController: ViewController, UIGestureRecognizerDelegate, ARSessionDe
             #endif
             
             let scnHitTestResult = arView?.scene.rootNode.hitTestWithSegment(from: origin, to: destination)
-            if let scnPosition = scnHitTestResult?.first(where: { $0.node is TerrainNode })?.worldCoordinates {
-                print("🎯 \(scnPosition)")
-                let scnSphere = SCNGeometry.shpere(at: scnPosition, withRadius: 0.001, withColour: .systemPink)
+            if let scnPosition = scnHitTestResult?.first(where: { $0.node is TerrainNode }), let terrain = terrain {
+                let scnWorldPosition = scnPosition.worldCoordinates
+                let scnLocalCoordinates = scnPosition.localCoordinates
+                let pysicalCoordinates = convertTerrainCoordinatesToPhysical(
+                    maxCorner: terrain.boundingBox.max,
+                    tapPosition: scnLocalCoordinates
+                )
+                
+                print("🎯 \(scnWorldPosition)")
+                print(terrain.position)
+                print(terrain.boundingBox.max)
+                print(scnLocalCoordinates)
+                print(pysicalCoordinates!)
+                
+                let scnSphere = SCNGeometry.shpere(at: scnWorldPosition, withRadius: 0.001, withColour: .systemPink)
                 pathPoints.append(Weak(scnSphere))
                 arView?.scene.rootNode.addChildNode(scnSphere)
             }
         }
+    }
+    
+    private func convertTerrainCoordinatesToPhysical(maxCorner: SCNVector3, tapPosition: SCNVector3) -> CLLocationCoordinate2D? {
+        guard let southWestCorner = southWestCorner, let northEastCorner = northEastCorner, let northWestCorner = northWestCorner else {
+            return nil
+        }
+        
+        let physicalDistance = southWestCorner.coordinate.distance(to: northEastCorner.coordinate) //southWestCorner.distance(from: northEastCorner)
+        print("physicalDistance \(physicalDistance)")
+        let tapPositionLocation = CLLocationCoordinate2D(latitude: CLLocationDegrees(tapPosition.z), longitude: CLLocationDegrees(tapPosition.x))
+        let maxCornerLocation = CLLocationCoordinate2D(latitude: CLLocationDegrees(maxCorner.z), longitude: CLLocationDegrees(maxCorner.x))
+        print("maxCornerLocation \(maxCornerLocation)")
+        let terrainCoordinatesDistance = CLLocationCoordinate2D(latitude: 0, longitude: 0).distance(to: maxCornerLocation)
+        print("terrainCoordinatesDistance \(terrainCoordinatesDistance)")
+
+        let pysicalDegreesPerTerrainDegree = physicalDistance / terrainCoordinatesDistance
+        print("pysicalDegreesPerTerrainDegree \(pysicalDegreesPerTerrainDegree)")
+        let latOffset = tapPositionLocation.latitude * pysicalDegreesPerTerrainDegree
+        print("latOffset \(latOffset)")
+        let lonOffset = tapPositionLocation.longitude * pysicalDegreesPerTerrainDegree
+        print("lonOffset \(lonOffset)")
+        
+        return CLLocationCoordinate2D(
+            latitude: northWestCorner.coordinate.latitude - latOffset,
+            longitude: northWestCorner.coordinate.longitude + lonOffset
+        )
     }
 
     private var lastDragResult: ARRaycastResult?
